@@ -17,8 +17,29 @@ class Curve:
         if other.z == (type(other.z))(0): return False
         return self.x/self.z == other.x/other.z and self.y/self.z == other.y/other.z
 
-    # See https://eprint.iacr.org/2015/1060.pdf Algorithm 7 p12
+    # See https: // www.hyperelliptic.org / EFD / g1p / auto - shortw - projective.html  # addition-add-1998-cmo-2
+    # TODO: IS THIS COMPLETE? DO WE NEED DOUBLING??
     def __add__(self, other):
+        assert type(self) == type(other)
+        x1, y1, z1 = self.x, self.y, self.z
+        x2, y2, z2 = other.x, other.y, other.z
+        y1z2 = y1 * z2
+        x1z2 = x1 * z2
+        z1z2 = z1 * z2
+        u = y2 * z1 - y1z2
+        uu = u**2
+        v = x2 * z1 - x1z2
+        vv = v**2
+        vvv = v * vv
+        R = vv * x1z2
+        A = uu * z1z2 - vvv - (R + R)  # was 2*R
+        x3 = v * A
+        y3 = u * (R - A) - vvv * y1z2
+        z3 = vvv * z1z2
+        return type(self)(x3, y3, z3)
+
+    # See https://eprint.iacr.org/2015/1060.pdf Algorithm 7 p12
+    def xx__add__(self, other):
         assert type(self) == type(other)
         x1, y1, z1 = self.x, self.y, self.z
         x2, y2, z2 = other.x, other.y, other.z
