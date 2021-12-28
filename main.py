@@ -9,54 +9,36 @@ Z = Fp(-13)
 theta = Fp(0x0f7bdb65814179b44647aef782d5cdc851f64fc4dc888857ca330bcc09ac318e)
 
 
-def hash_to_field(curve_id, domain_prefix, message):
-    CHUNKLEN = 64
-    R_IN_BYTES = 128
-    tail = bytes([22 + len(curve_id) + len(domain_prefix)])
-    h0 = blake2b(digest_size=CHUNKLEN, person=b'\x00' * 16)
-    # h0.update(b''.join([b'\x00' * R_IN_BYTES, message, bytes([0, CHUNKLEN * 2, 0]), domain_prefix,
-    #                     b'-', curve_id, b'_XMD:BLAKE2b_SSWU_RO_', tail]))
-    h0.update(b'\x00' * 128 + message + b'\x00\x80\x00' + domain_prefix +
-              b'-' + curve_id + b'_XMD:BLAKE2b_SSWU_RO_' + tail)
-    b_0 = h0.digest()
-    h1 = blake2b(digest_size=CHUNKLEN, person=b'\x00' * 16)
-    h1.update(b''.join([h0.digest(), b'\x01', domain_prefix, b'-', curve_id,
-                        b'_XMD:BLAKE2b_SSWU_RO_', tail]))
-    b_1 = h1.digest()
-    h2 = blake2b(digest_size=CHUNKLEN, person=b'\x00' * 16)
-    h2.update(bytes(a ^ b for (a, b) in zip(b_0, b_1)))
-    h2.update(b''.join([b'\x02', domain_prefix, b'-', curve_id, b'_XMD:BLAKE2b_SSWU_RO_', tail]))
-    b_2 = h2.digest()
-    buf0 = Fp(int.from_bytes(b_1, byteorder='big'))
-    buf1 = Fp(int.from_bytes(b_2, byteorder='big'))
-    return buf0, buf1
+def hash_to_field(curve_id: bytes, domain_prefix: bytes, message: bytes):
+    suffix = domain_prefix + b'-' + curve_id + b'_XMD:BLAKE2b_SSWU_RO_' + \
+             bytes([22 + len(curve_id) + len(domain_prefix)])
+    hasher0 = blake2b(digest_size=64, person=b'\x00' * 16)
+    hasher0.update(b'\x00' * 128 + message + b'\x00\x80\x00' + suffix)
+    hasher1 = blake2b(digest_size=64, person=b'\x00' * 16)
+    hasher1.update(hasher0.digest() + b'\x01' + suffix)
+    hasher2 = blake2b(digest_size=64, person=b'\x00' * 16)
+    hasher2.update(bytes(a ^ b for (a, b) in zip(hasher0.digest(), hasher1.digest())))
+    hasher2.update(b'\x02' + suffix)
+    element0 = Fp(int.from_bytes(hasher1.digest(), byteorder='big'))
+    element1 = Fp(int.from_bytes(hasher2.digest(), byteorder='big'))
+    return element0, element1
 
 
 def map_to_curve_simple_swu(u):
-    # 1. tv1 = inv0(Z^2 * u^4 + Z * u^2)
-    tv1 = Fp(1) / (Z ** 2 * u ** 4 + Z * u ** 2)
-    # 2.  x1 = (-B / A) * (1 + tv1)
-    x1 = ((Fp(0) - B) / A) * (Fp(1) + tv1)
-    # 3.  If tv1 == 0, set x1 = B / (Z * A)
-    if tv1 == Fp(0): x1 = B / (Z * A)
-    # 4. gx1 = x1^3 + A * x1 + B
-    gx1 = x1 ** 3 + A * x1 + B
-    # 5.  x2 = Z * u^2 * x1
-    x2 = Z * u ** 2 * x1
-    # 6. gx2 = x2^3 + A * x2 + B
-    gx2 = x2 ** 3 + A * x2 + B
-    # 7.  If is_square(gx1), set x = x1 and y = sqrt(gx1)
-    if gx1.is_square():
+    tv1 = Fp(1) / (Z ** 2 * u ** 4 + Z * u ** 2)  # 1. tv1 = inv0(Z^2 * u^4 + Z * u^2)
+    x1 = ((Fp(0) - B) / A) * (Fp(1) + tv1)  # 2.  x1 = (-B / A) * (1 + tv1)
+    if tv1 == Fp(0): x1 = B / (Z * A)  # 3.  If tv1 == 0, set x1 = B / (Z * A)
+    gx1 = x1 ** 3 + A * x1 + B  # 4. gx1 = x1^3 + A * x1 + B
+    x2 = Z * u ** 2 * x1  # 5.  x2 = Z * u^2 * x1
+    gx2 = x2 ** 3 + A * x2 + B  # 6. gx2 = x2^3 + A * x2 + B
+    if gx1.is_square():  # 7.  If is_square(gx1), set x = x1 and y = sqrt(gx1)
         x = x1
         y = gx1.sqrt()
-    # 8.  Else set x = x2 and y = sqrt(gx2)
-    else:
+    else:  # 8.  Else set x = x2 and y = sqrt(gx2)
         x = x2
         y = gx2.sqrt()
-    # 9.  If sgn0(u) != sgn0(y), set y = -y
-    if u.sgn0 != y.sgn0: y = Fp(0) - y
-    # 10. return (x, y)
-    return x, y
+    if u.sgn0 != y.sgn0: y = Fp(0) - y  # 9.  If sgn0(u) != sgn0(y), set y = -y
+    return x, y  # 10. return (x, y)
 
 
 def is_on_iso_pallas_curve(pt):
@@ -101,9 +83,15 @@ if __name__ == '__main__':
     q0 = Pallas(act_x1, act_y1, Fp(1))
     q1 = Pallas(act_x2, act_y2, Fp(1))
     r = q0 + q1
+    assert r == Pallas(Fp(0x3da8497a87f06e28b7983f044f5f93575daf4806e0735700ebd79184070bb58e),
+                       Fp(0x271b2b52a5e759ee28a21db1a520739b1f53a1960433d08593ec10e225dec8c0),
+                       Fp(1))
     print("r is: ", r)
 
     assert is_on_iso_pallas_curve(r)
 
     z = iso_map(r)
+    assert z == Pallas(Fp(0x1818cda31ffdc8c3ff23df3d88c26f952340257d0f187a0236695c9b640b6bd3),
+                       Fp(0x1e20888510123752166a0306332e126289f6f9a2774160395f2f1efc9b1280c),
+                       Fp(1))
     print("iso out: ", z)
