@@ -1,3 +1,6 @@
+from hashlib import blake2b
+
+
 class Field:
 
     # Constants are to be defined in specific Field subclasses
@@ -30,6 +33,8 @@ class Field:
         assert isinstance(other, int)
         return type(self)(pow(self.value, other, self.modulus))
 
+    # TODO: maybe insert inv0 here?
+
     def __truediv__(self, other):
         assert type(self) == type(other)
         inv = pow(other.value, self.modulus - 2, self.modulus)
@@ -58,6 +63,22 @@ class Field:
 
     def sgn0(self):
         return self.value & 0x01
+
+    # TODO: could curve_id be automatically derived? (no, better to have hash_to_curve in curve)
+    @classmethod
+    def hash_to_field(cls, curve_id: bytes, domain_prefix: bytes, message: bytes):
+        suffix = domain_prefix + b'-' + curve_id + b'_XMD:BLAKE2b_SSWU_RO_' + \
+                 bytes([22 + len(curve_id) + len(domain_prefix)])
+        hasher0 = blake2b(digest_size=64, person=b'\x00' * 16)
+        hasher0.update(b'\x00' * 128 + message + b'\x00\x80\x00' + suffix)
+        hasher1 = blake2b(digest_size=64, person=b'\x00' * 16)
+        hasher1.update(hasher0.digest() + b'\x01' + suffix)
+        hasher2 = blake2b(digest_size=64, person=b'\x00' * 16)
+        hasher2.update(bytes(a ^ b for (a, b) in zip(hasher0.digest(), hasher1.digest())))
+        hasher2.update(b'\x02' + suffix)
+        element0 = cls(int.from_bytes(hasher1.digest(), byteorder='big'))
+        element1 = cls(int.from_bytes(hasher2.digest(), byteorder='big'))
+        return element0, element1
 
 
 class Fp(Field):
