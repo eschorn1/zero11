@@ -1,3 +1,5 @@
+from functools import reduce
+
 from fields import Fp, Fq
 
 
@@ -80,7 +82,7 @@ class Poly:
     def dot(left, right):
         # assert type(left) == type(right) and len(left.coeffs) == len(right.coeffs)
         xx = map(lambda x, y: x * y, left, right)
-        return sum(xx, start=left[0].neutral())
+        return reduce(lambda x, y: x + y, xx)
 
     @staticmethod
     def trim_leading_0s(coeffs):
