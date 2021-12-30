@@ -1,6 +1,7 @@
 from fields import Fp
 from poly import Poly
 
+
 class Gates:
     def __init__(self, input_names):
         self.inputs = input_names
@@ -91,7 +92,6 @@ if __name__ == '__main__':
     for index, poli in enumerate(polys[1]):
         print(4, poli.eval(Fp(4)))
 
-
     dots = []
     for group in polys:
         xxx = Poly([Fp(0)])
@@ -107,7 +107,6 @@ if __name__ == '__main__':
 
     for index in range(1, 5):
         print("t eval", index, t.eval(Fp(index)))
-
 
     z = Poly([Fp(1)])
     for index in range(1, 5):

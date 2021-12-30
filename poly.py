@@ -98,15 +98,15 @@ if __name__ == "__main__":
     from curves import Pallas
 
     for _i in range(100):
-        p1 = Poly([Fp(randint(0, Fp.modulus - 1)) for i in range(20)])
-        p2 = Poly([Fp(randint(0, 20)) for i in range(40)])  # aiming for some zeros
+        p1 = Poly([Fp(randint(0, Fp.modulus - 1)) for _j in range(20)])
+        p2 = Poly([Fp(randint(0, 20)) for _k in range(40)])  # aiming for some zeros
         pmul = p1 * p2
         assert (pmul / p1)[0] == p2
         assert (pmul / p2)[0] == p1
 
     for _i in range(100):
-        q1 = Poly([Fq(randint(0, Fq.modulus - 1)) for i in range(20)])
-        q2 = Poly([Fq(randint(0, 20)) for i in range(40)])  # aiming for some zeros
+        q1 = Poly([Fq(randint(0, Fq.modulus - 1)) for _l in range(20)])
+        q2 = Poly([Fq(randint(0, 20)) for _m in range(40)])  # aiming for some zeros
         qmul = q1 * q2
         assert (qmul / q1)[0] == q2
         assert (qmul / q2)[0] == q1
@@ -119,9 +119,9 @@ if __name__ == "__main__":
     assert Poly.dot(p1.coeffs, [Fp(100), Fp(100), Fp(100), Fp(100)]) == Fp(1000)
 
     # (1, 2, 3, 4) dot (1, 2, 3, 4) = 1+4+9+16 = 30
-    right = [Fq(1), Fq(2), Fq(3), Fq(4)]
-    left = [Pallas.base() * x for x in [Fq(1), Fq(2), Fq(3), Fq(4)]]
-    res = Poly.dot(left, right)
+    right1 = [Fq(1), Fq(2), Fq(3), Fq(4)]
+    left1 = [Pallas.base() * x for x in [Fq(1), Fq(2), Fq(3), Fq(4)]]
+    res = Poly.dot(left1, right1)
     assert res == Pallas.base() * Fq(30)
 
     # TODO: want to evaluate a0*x^0 + a1*x^1 + a2*x^2 + a3*x^3
@@ -129,7 +129,6 @@ if __name__ == "__main__":
     # TODO: --------------> Better review paper and see what is needed; maybe it is only dot product!!!!!
     # TODO: NNNNNNOOOOOOOOOOOOOOOOo, more likely dot must handle fp x fp, fp x g
     pp = Pallas.base()
-
 
     print("Success.")
 

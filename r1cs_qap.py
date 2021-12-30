@@ -97,8 +97,8 @@ if __name__ == '__main__':
     for poly in gates.polys['right']: print(f'B poly {poly}')
     for poly in gates.polys['out']: print(f'C poly {poly}')
 
-    soln = [Fp(1), Fp(3), Fp(35), Fp(9), Fp(27), Fp(30)]
-    gates.gen_t(soln)
+    soln1 = [Fp(1), Fp(3), Fp(35), Fp(9), Fp(27), Fp(30)]
+    gates.gen_t(soln1)
 
     gates.gen_z()
 

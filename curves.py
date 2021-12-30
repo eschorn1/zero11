@@ -1,3 +1,5 @@
+import secrets
+
 from fields import Fp, Fq
 
 
@@ -22,35 +24,35 @@ class Curve:
     def __add__(self, other, a=None, b3=None):
         assert type(self) == type(other)
         # if a is None and b3 is None: assert self.is_on_curve(self)
-        X1, Y1, Z1 = self.x, self.y, self.z
-        X2, Y2, Z2 = other.x, other.y, other.z
+        x1, y1, z1 = self.x, self.y, self.z
+        x2, y2, z2 = other.x, other.y, other.z
         if a is None: a = self.a
         if b3 is None: b3 = self.b3 * type(self.x)(3)
         assert self.is_on_my_curve(a, b3 / type(self.x)(3))
-        t0 = X1 * X2     # 1.  t0 ← X1 · X2
-        t1 = Y1 * Y2     # 2.  t1 ← Y1 · Y2
-        t2 = Z1 * Z2     # 3.  t2 ← Z1 · Z2
-        t3 = X1 + Y1     # 4.  t3 ← X1 + Y1
-        t4 = X2 + Y2     # 5.  t4 ← X2 + Y2
+        t0 = x1 * x2     # 1.  t0 ← X1 · X2
+        t1 = y1 * y2     # 2.  t1 ← Y1 · Y2
+        t2 = z1 * z2     # 3.  t2 ← Z1 · Z2
+        t3 = x1 + y1     # 4.  t3 ← X1 + Y1
+        t4 = x2 + y2     # 5.  t4 ← X2 + Y2
         t3 = t3 * t4     # 6.  t3 ← t3 · t4
         t4 = t0 + t1     # 7.  t4 ← t0 + t1
         t3 = t3 - t4     # 8.  t3 ← t3 − t4
-        t4 = X1 + Z1     # 9.  t4 ← X1 + Z1
-        t5 = X2 + Z2     # 10. t5 ← X2 + Z2
+        t4 = x1 + z1     # 9.  t4 ← X1 + Z1
+        t5 = x2 + z2     # 10. t5 ← X2 + Z2
         t4 = t4 * t5     # 11. t4 ← t4 · t5
         t5 = t0 + t2     # 12. t5 ← t0 + t2
         t4 = t4 - t5     # 13. t4 ← t4 − t5
-        t5 = Y1 + Z1     # 14. t5 ← Y1 + Z1
-        X3 = Y2 + Z2     # 15. X3 ← Y2 + Z2
-        t5 = t5 * X3     # 16. t5 ← t5 · X3
-        X3 = t1 + t2     # 17. X3 ← t1 + t2
-        t5 = t5 - X3     # 18. t5 ← t5 − X3
-        Z3 = a * t4      # 19. Z3 ← a · t4
-        X3 = b3 * t2     # 20. X3 ← b3 · t2
-        Z3 = X3 + Z3     # 21. Z3 ← X3 + Z3
-        X3 = t1 - Z3     # 22. X3 ← t1 − Z3
-        Z3 = t1 + Z3     # 23. Z3 ← t1 + Z3
-        Y3 = X3 * Z3     # 24. Y3 ← X3 · Z3
+        t5 = y1 + z1     # 14. t5 ← Y1 + Z1
+        x3 = y2 + z2     # 15. X3 ← Y2 + Z2
+        t5 = t5 * x3     # 16. t5 ← t5 · X3
+        x3 = t1 + t2     # 17. X3 ← t1 + t2
+        t5 = t5 - x3     # 18. t5 ← t5 − X3
+        z3 = a * t4      # 19. Z3 ← a · t4
+        x3 = b3 * t2     # 20. X3 ← b3 · t2
+        z3 = x3 + z3     # 21. Z3 ← X3 + Z3
+        x3 = t1 - z3     # 22. X3 ← t1 − Z3
+        z3 = t1 + z3     # 23. Z3 ← t1 + Z3
+        y3 = x3 * z3     # 24. Y3 ← X3 · Z3
         t1 = t0 + t0     # 25. t1 ← t0 + t0
         t1 = t1 + t0     # 26. t1 ← t1 + t0
         t2 = a * t2      # 27. t2 ← a · t2
@@ -60,19 +62,19 @@ class Curve:
         t2 = a * t2      # 31. t2 ← a · t2
         t4 = t4 + t2     # 32. t4 ← t4 + t2
         t0 = t1 * t4     # 33. t0 ← t1 · t4
-        Y3 = Y3 + t0     # 34. Y3 ← Y3 + t0
+        y3 = y3 + t0     # 34. Y3 ← Y3 + t0
         t0 = t5 * t4     # 35. t0 ← t5 · t4
-        X3 = t3 * X3     # 36. X3 ← t3 · X3
-        X3 = X3 - t0     # 37. X3 ← X3 − t0
+        x3 = t3 * x3     # 36. X3 ← t3 · X3
+        x3 = x3 - t0     # 37. X3 ← X3 − t0
         t0 = t3 * t1     # 38. t0 ← t3 · t1
-        Z3 = t5 * Z3     # 39. Z3 ← t5 · Z3
-        Z3 = Z3 + t0     # 40. Z3 ← Z3 + t0
-        result = type(self)(X3, Y3, Z3)
+        z3 = t5 * z3     # 39. Z3 ← t5 · Z3
+        z3 = z3 + t0     # 40. Z3 ← Z3 + t0
+        result = type(self)(x3, y3, z3)
         # assert self.is_on_curve(result)
         return result
 
     def __repr__(self):
-        if self.z == type(self.z)(0): return "Neutral point"
+        if self.z == (type(self.z))(0): return "Neutral point"
         return f'{self.__class__.__name__} x={self.x/self.z} y={self.y/self.z}'
 
     def __mul__(self, other):
@@ -95,7 +97,6 @@ class Curve:
         q1 = cls(x2, y2, type(cls.b3)(1))
         # r = q0 + q1
         r = q0.__add__(q1, a=cls.A, b3=cls.B * Fp(3))
-        #assert cls.is_on_iso_curve(r)
         assert r.is_on_my_curve(a=cls.A, b=cls.B * Fp(1))
         z = cls.iso_map(r)
         assert z.is_on_my_curve(a=cls.a, b=cls.b3 * Fp(1))
@@ -131,6 +132,16 @@ class Curve:
         y_den = x ** 3 + cls.iso[10] * x ** 2 + cls.iso[11] * x + cls.iso[12]
         return type(pt)(x_num / x_den, (y * y_num) / y_den, Fp(1))
 
+    @classmethod
+    def rnd(cls):
+        token_g = secrets.token_bytes(16)
+        element = Pallas.hash_to_curve(token_g)
+        return element
+
+    @classmethod
+    def neutral(cls):
+        pass
+
 
 # y**2 = x**3 + 5 over Fp
 class Pallas(Curve):
@@ -163,6 +174,8 @@ class Pallas(Curve):
     @staticmethod
     def neutral():
         return Pallas(Fp(0), Fp(1), Fp(0))
+
+    neu = (Fp(0), Fp(1), Fp(0))
 
 
 # y**2 = x**3 + 5 over Fq
@@ -197,23 +210,23 @@ if __name__ == "__main__":
     assert v1 == Vesta.base() * Fp(100)
 
     for _i in range(100):
-        x1 = randint(2, Pallas.order // 2)
-        p1 = Pallas.base() * Fq(x1)
+        xx1 = randint(2, Pallas.order // 2)
+        p1 = Pallas.base() * Fq(xx1)
 
-        x2 = randint(2, Pallas.order // 2)
-        p2 = Pallas.base() * Fq(x2)
+        xx2 = randint(2, Pallas.order // 2)
+        p2 = Pallas.base() * Fq(xx2)
 
-        p3 = Pallas.base() * Fq(x1 + x2)
+        p3 = Pallas.base() * Fq(xx1 + xx2)
         assert p1 + p2 == p3
 
     for _i in range(100):
-        x1 = randint(2, Vesta.order // 2)
-        v1 = Vesta.base() * Fp(x1)
+        xx1 = randint(2, Vesta.order // 2)
+        v1 = Vesta.base() * Fp(xx1)
 
         x2 = randint(2, Pallas.order // 2)
-        v2 = Vesta.base() * Fp(x2)
+        v2 = Vesta.base() * Fp(xx2)
 
-        v3 = Vesta.base() * Fp(x1 + x2)
+        v3 = Vesta.base() * Fp(xx1 + xx2)
         assert v1 + v2 == v3
 
     print("Testing hash-to-curve")
@@ -225,26 +238,23 @@ if __name__ == "__main__":
     assert act_x2 == Fp(0x2c6e5aa1a88cd76c8a9d436438d2993244bf7704e4f322a86d0890bd6cee28ab)
     assert act_y2 == Fp(0x0b20c46efea44d15e4828808c86a72789d54328635ba4274d8e9b48d9654f65b)
 
-    q0 = Pallas(act_x1, act_y1, Fp(1))
-    q1 = Pallas(act_x2, act_y2, Fp(1))
+    qq0 = Pallas(act_x1, act_y1, Fp(1))
+    qq1 = Pallas(act_x2, act_y2, Fp(1))
     # r = q0 + q1
-    #r = q0.yy__add__(q1)
-    r = q0.__add__(q1, a=Pallas.A, b3=Pallas.B * Fp(3))
+    rr = qq0.__add__(qq1, a=Pallas.A, b3=Pallas.B * Fp(3))
 
-    assert r == Pallas(Fp(0x3da8497a87f06e28b7983f044f5f93575daf4806e0735700ebd79184070bb58e),
-                       Fp(0x271b2b52a5e759ee28a21db1a520739b1f53a1960433d08593ec10e225dec8c0),
-                       Fp(1))
-    #print("r is: ", r)
+    assert rr == Pallas(Fp(0x3da8497a87f06e28b7983f044f5f93575daf4806e0735700ebd79184070bb58e),
+                        Fp(0x271b2b52a5e759ee28a21db1a520739b1f53a1960433d08593ec10e225dec8c0),
+                        Fp(1))
 
-    assert r.is_on_my_curve(a=r.A, b=r.B * Fp(1))
+    assert rr.is_on_my_curve(a=rr.A, b=rr.B * Fp(1))
 
-    z = Pallas.iso_map(r)
-    assert z == Pallas(Fp(0x1818cda31ffdc8c3ff23df3d88c26f952340257d0f187a0236695c9b640b6bd3),
-                       Fp(0x1e20888510123752166a0306332e126289f6f9a2774160395f2f1efc9b1280c),
-                       Fp(1))
-    #print("iso out: ", z)
+    z11 = Pallas.iso_map(rr)
+    assert z11 == Pallas(Fp(0x1818cda31ffdc8c3ff23df3d88c26f952340257d0f187a0236695c9b640b6bd3),
+                         Fp(0x1e20888510123752166a0306332e126289f6f9a2774160395f2f1efc9b1280c),
+                         Fp(1))
 
     zz = Pallas.hash_to_curve(b'Trans rights now!')
-    assert zz == z
+    assert zz == z11
 
     print("Success.")

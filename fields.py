@@ -1,3 +1,4 @@
+import secrets
 from hashlib import blake2b
 
 
@@ -26,7 +27,7 @@ class Field:
         return type(self)(self.value - other.value)
 
     def __mul__(self, other):
-        assert type(self) == type(other)
+        if type(self) != type(other): return other.__mul__(self)
         return type(self)(self.value * other.value)
 
     def __pow__(self, other):
@@ -40,13 +41,17 @@ class Field:
         inv = pow(other.value, self.modulus - 2, self.modulus)
         return type(self)(self.value * inv)
 
+    @classmethod
+    def rnd(cls):
+        return cls(secrets.randbits(256+64))
+
     def is_square(self):
         val = self**((self.modulus-1)//2)
         return val == type(self)(0) or val == type(self)(1)
 
     # Tonelli-Shanks, see https://en.wikipedia.org/wiki/Tonelli%E2%80%93Shanks_algorithm and/or https://www.diva-portal.org/smash/get/diva2:1581080/FULLTEXT01.pdf
     def sqrt(self):
-        m, c = self.s, self.c
+        m, c, i = self.s, self.c, 0
         t = pow(self.value, self.q, self.modulus)
         r = pow(self.value, (self.q + 1) // 2, self.modulus)
         while True:
