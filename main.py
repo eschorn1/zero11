@@ -2,7 +2,7 @@ from collections import namedtuple
 from functools import reduce
 
 from curves import Pallas
-from fields import Fq, Fp
+from fields import Fq
 from poly import Poly
 
 Crs = namedtuple("Crs", "g h")
@@ -17,8 +17,8 @@ def setup(size):
 
 
 def commit(crs, poly, r):
-    dd = Poly.dot(crs.g, poly)
-    return dd + crs.h * r
+    dot = Poly.dot(crs.g, poly)
+    return dot + crs.h * r
 
 
 if __name__ == '__main__':
@@ -73,16 +73,13 @@ if __name__ == '__main__':
         b_prime = [blo / uj + bhi * uj for (blo, bhi) in zip(b_prime[0:bound], b_prime[bound:])]
         g_prime = [glo * (Fq(1)/uj) + ghi * uj for (glo, ghi) in zip(g_prime[0:bound], g_prime[bound:])]
 
-
         print('hello ', j, bound, len(a_prime))
 
     uu.reverse(); rj.reverse(); lj.reverse(); L.reverse(); R.reverse()
     # works
     s = [Fq(1)] * 8
-    #u = [3, 6, 9]
     for i in range(2**len(uu)):
         for j in range(len(uu)):
-            #print(i & 2**j)
             if i & 2**j != 0:
                 s[i] = s[i] * uu[j]
             else:
@@ -107,7 +104,7 @@ if __name__ == '__main__':
 
     r_prime = reduce(lambda x, y: x + y, [llj*uuj**2 for (llj, uuj) in zip(lj, uu)]) + \
         r1 + \
-              reduce(lambda x, y: x + y, [rrj * (Fq(1) / uuj ** 2) for (rrj, uuj) in zip(rj, uu)])
+        reduce(lambda x, y: x + y, [rrj * (Fq(1) / uuj ** 2) for (rrj, uuj) in zip(rj, uu)])
 
     q2 = a_prime[0] * g_prime[0] + r_prime * crs1.h + (a_prime[0]*b_prime[0]) * u
 
@@ -115,5 +112,22 @@ if __name__ == '__main__':
     print("q2 ", q2)
     assert q == q2   # oh, yes!!
 
+    q3 = a_prime[0] * (g_prime[0] + b_prime[0] * u) + r_prime * crs1.h
+    print("q3: ", q3)
+    assert q3 == q2
+
+    # p9 now...
+
+    dd = Fq.rnd(); ss = Fq.rnd()
+    big_r = dd * (g_prime[0] + b_prime[0] * u) + ss * crs1.h
+
+    cc = Fq.rnd()
+
+    z1 = a_prime[0] * cc + dd
+    z2 = cc * r_prime + ss
+
+    left = cc * q + big_r
+    right = z1 * (g_prime[0] + b_prime[0] * u) + z2 * crs1.h
+    assert left == right
 
     print("Success.")
