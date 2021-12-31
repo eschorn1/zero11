@@ -1,4 +1,5 @@
 from collections import namedtuple
+from functools import reduce
 
 from curves import Pallas
 from fields import Fq, Fp
@@ -58,13 +59,13 @@ if __name__ == '__main__':
     a_prime = poly1.coeffs
     b_prime = [x**i for i in range(len(poly1.coeffs))]
 
-    L = []; R = []; uu = []
+    L = []; R = []; uu = []; lj = []; rj = []
     for j in range(len(crs1.g).bit_length() - 1, 0, -1):
         bound = 2**j // 2
-        lj = Fq.rnd(); rj = Fq.rnd()
-        xx = Poly.dot(a_prime[0:bound], g_prime[bound:]) + lj * crs1.h + Poly.dot(a_prime[0:bound], b_prime[bound::]) * u
+        lj.append(Fq.rnd()); rj.append(Fq.rnd())
+        xx = Poly.dot(a_prime[0:bound], g_prime[bound:]) + lj[-1] * crs1.h + Poly.dot(a_prime[0:bound], b_prime[bound::]) * u
         L.append(xx)
-        yy = Poly.dot(a_prime[bound:], g_prime[0:bound]) + rj * crs1.h + Poly.dot(a_prime[bound:], b_prime[0:bound]) * u
+        yy = Poly.dot(a_prime[bound:], g_prime[0:bound]) + rj[-1] * crs1.h + Poly.dot(a_prime[bound:], b_prime[0:bound]) * u
         R.append(yy)
         uj = Fq.rnd()  # TODO should be drawn from I (challenge space)
         uu.append(uj)
@@ -75,7 +76,7 @@ if __name__ == '__main__':
 
         print('hello ', j, bound, len(a_prime))
 
-    uu.reverse()
+    uu.reverse(); rj.reverse(); lj.reverse(); L.reverse(); R.reverse()
     # works
     s = [Fq(1)] * 8
     #u = [3, 6, 9]
@@ -91,8 +92,28 @@ if __name__ == '__main__':
     g0 = Poly.dot(s, crs1.g)
     print("g0 ", g0)
     print("gp ", g_prime)
+    assert g0 == g_prime[0]
 
     b0 = Poly.dot(s, [x**i for i in range(len(poly1.coeffs))])
     print("b0 ", b0)
     print("bp ", b_prime)
+    assert b0 == b_prime[0]
     # omg!!
+
+    # TODO: Careful that one list has been reversed!! Need to append lists of lj and rj
+    q = reduce(lambda a, b: a + b, [uj**2 * Lj for (uj, Lj) in zip(uu, L)]) + \
+        poly_commit_prime + \
+        reduce(lambda a, b: a + b, [(Fq(1) / (uj ** 2)) * Rj for (uj, Rj) in zip(uu, R)])
+
+    r_prime = reduce(lambda x, y: x + y, [llj*uuj**2 for (llj, uuj) in zip(lj, uu)]) + \
+        r1 + \
+              reduce(lambda x, y: x + y, [rrj * (Fq(1) / uuj ** 2) for (rrj, uuj) in zip(rj, uu)])
+
+    q2 = a_prime[0] * g_prime[0] + r_prime * crs1.h + (a_prime[0]*b_prime[0]) * u
+
+    print("q  ", q)
+    print("q2 ", q2)
+    assert q == q2   # oh, yes!!
+
+
+    print("Success.")
