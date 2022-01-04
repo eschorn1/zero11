@@ -22,20 +22,74 @@ class __Curve:
 
     # See https://eprint.iacr.org/2015/1060.pdf page 8
     # Algorithm 1: Complete, projective point addition for arbitrary prime order short Weierstrass curves E/Fq : y^2 = x^3 + ax + b.
+    # def __add__(self, other, a=None, b=None):  # a,b params only used when on isogeny curves
+    #     assert type(self) is type(other)
+    #     if a is None: a = self.a
+    #     b3 = type(self.x)(3) * (self.b if b is None else b)
+    #     x1, y1, z1 = self.x, self.y, self.z
+    #     x2, y2, z2 = other.x, other.y, other.z
+    #     t0 = x1 * x2;   t1 = y1 * y2;   t2 = z1 * z2;   t3 = x1 + y1;   t4 = x2 + y2
+    #     t3 = t3 * t4;   t4 = t0 + t1;   t3 = t3 - t4;   t4 = x1 + z1;   t5 = x2 + z2
+    #     t4 = t4 * t5;   t5 = t0 + t2;   t4 = t4 - t5;   t5 = y1 + z1;   x3 = y2 + z2
+    #     t5 = t5 * x3;   x3 = t1 + t2;   t5 = t5 - x3;   z3 = a * t4;    x3 = b3 * t2
+    #     z3 = x3 + z3;   x3 = t1 - z3;   z3 = t1 + z3;   y3 = x3 * z3;   t1 = t0 + t0
+    #     t1 = t1 + t0;   t2 = a * t2;    t4 = b3 * t4;   t1 = t1 + t2;   t2 = t0 - t2
+    #     t2 = a * t2;    t4 = t4 + t2;   t0 = t1 * t4;   y3 = y3 + t0;   t0 = t5 * t4
+    #     x3 = t3 * x3;   x3 = x3 - t0;   t0 = t3 * t1;   z3 = t5 * z3;   z3 = z3 + t0
+    #     return type(self)(x3, y3, z3)
+
+
     def __add__(self, other, a=None, b=None):  # a,b params only used when on isogeny curves
         assert type(self) is type(other)
         if a is None: a = self.a
         b3 = type(self.x)(3) * (self.b if b is None else b)
         x1, y1, z1 = self.x, self.y, self.z
         x2, y2, z2 = other.x, other.y, other.z
-        t0 = x1 * x2;   t1 = y1 * y2;   t2 = z1 * z2;   t3 = x1 + y1;   t4 = x2 + y2
-        t3 = t3 * t4;   t4 = t0 + t1;   t3 = t3 - t4;   t4 = x1 + z1;   t5 = x2 + z2
-        t4 = t4 * t5;   t5 = t0 + t2;   t4 = t4 - t5;   t5 = y1 + z1;   x3 = y2 + z2
-        t5 = t5 * x3;   x3 = t1 + t2;   t5 = t5 - x3;   z3 = a * t4;    x3 = b3 * t2
-        z3 = x3 + z3;   x3 = t1 - z3;   z3 = t1 + z3;   y3 = x3 * z3;   t1 = t0 + t0
-        t1 = t1 + t0;   t2 = a * t2;    t4 = b3 * t4;   t1 = t1 + t2;   t2 = t0 - t2
-        t2 = a * t2;    t4 = t4 + t2;   t0 = t1 * t4;   y3 = y3 + t0;   t0 = t5 * t4
-        x3 = t3 * x3;   x3 = x3 - t0;   t0 = t3 * t1;   z3 = t5 * z3;   z3 = z3 + t0
+        m0 = x1 * x2
+        m1 = y1 * y2
+        m2 = z1 * z2
+        # a0 = x1 + y1
+        # a1 = x2 + y2
+        m3 = (x1 + y1) * (x2 + y2)
+        # a2 = m0 + m1
+        # a3 = m3 - (m0 + m1)
+        # a4 = x1 + z1
+        # a5 = x2 + z2
+        m4 = (x1 + z1) * (x2 + z2)
+        # a6 = m0 + m2
+        # a7 = m4 - (m0 + m2)
+        # a8 = y1 + z1
+        # a9 = y2 + z2
+        m5 = (y1 + z1) * (y2 + z2)
+        # a10 = m1 + m2
+        # a11 = m5 - (m1 + m2)
+        m6 = a * (- m0 - m2 + m4)  # m6 = a * (m4 - (m0 + m2))
+        m7 = b3 * m2
+        # a12 = m7 + m6
+        # a13 = m1 - (m7 + m6)
+        # a14 = m1 + (m7 + m6)
+        m8 = (m1 - m6 - m7) * (m1 + m6 + m7)  # m8 = (m1 - (m7 + m6)) * (m1 + (m7 + m6))
+        # a15 = m0 + m0
+        # a16 = (m0 + m0) + m0
+        m9 = a * m2
+        m10 = b3 * (- m0 - m2 + m4)  # m10 = b3 * (m4 - (m0 + m2))
+        # a17 = ((m0 + m0) + m0) + m9
+        # a18 = m0 - m9
+        m11 = a * (m0 - m9)
+        # a19 = m10 + m11
+        m12 = (m0 * 3 + m9) * (m10 + m11)  # m12 = (((m0 + m0) + m0) + m9) * (m10 + m11)
+        # a20 = m8 + m12
+        m13 = (- m1 - m2 + m5) * (m10 + m11)  # m13 = (m5 - (m1 + m2)) * (m10 + m11)
+        m14 = (- m0 - m1 + m3) * (m1 - m6 - m7)  # m14 = (m3 - (m0 + m1)) * (m1 - (m7 + m6))
+        # a21 = m14 - m13
+        m15 = (- m0 - m1 + m3) * (m0 * 3 + m9)  # m15 = (m3 - (m0 + m1)) * (((m0 + m0) + m0) + m9)
+        m16 = (- m1 - m2 + m5) * (m1 + m6 + m7)  # m16 = (m5 - (m1 + m2)) * (m1 + (m7 + m6))
+        # a22 = m16 + m15
+        z3_inv = (m15 + m16).inv0()
+        x3 = (- m13 + m14) * z3_inv
+        y3 = (m8 + m12) * z3_inv
+        z3 = (m15 + m16) * z3_inv
+        # return type(self)(a21, a20, a22)
         return type(self)(x3, y3, z3)
 
     def __mul__(self, other):

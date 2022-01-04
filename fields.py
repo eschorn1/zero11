@@ -22,6 +22,7 @@ class __Field:
         return type(self)(self.value - other.value)
 
     def __mul__(self, other):
+        if type(other) is int: return type(self)(self.value * other)
         if type(self) is not type(other): return other.__mul__(self)
         return type(self)(self.value * other.value)
 
